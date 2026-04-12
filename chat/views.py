@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from .models import ChatSession, ChatMessage
 from .services.groq_service import get_groq_response
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
+def chat_api(request):
 
 def home(request):
     sessions = ChatSession.objects.all().order_by('-created_at')
