@@ -1,10 +1,12 @@
 from groq import Groq
 from django.conf import settings
 
-print("GROQ KEY:", settings.GROQ_API_KEY)
 
 def get_groq_response(message):
     try:
+        # 🔑 Create client properly
+        client = Groq(api_key=settings.GROQ_API_KEY)
+
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -18,7 +20,9 @@ def get_groq_response(message):
                 }
             ]
         )
+
         return response.choices[0].message.content
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        print("ERROR:", e)
+        return "AI error"
