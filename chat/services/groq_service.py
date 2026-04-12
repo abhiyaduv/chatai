@@ -1,23 +1,17 @@
 from groq import Groq
 from django.conf import settings
 
-
 def get_groq_response(message):
     try:
-        # 🔑 Create client properly
+        if not settings.GROQ_API_KEY:
+            return "API key missing"
+
         client = Groq(api_key=settings.GROQ_API_KEY)
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful chatbot. Give short, direct, and useful answers. Do not introduce yourself."
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
+                {"role": "user", "content": message}
             ]
         )
 
@@ -25,4 +19,4 @@ def get_groq_response(message):
 
     except Exception as e:
         print("ERROR:", e)
-        return "AI error"
+        return f"Error: {str(e)}"
