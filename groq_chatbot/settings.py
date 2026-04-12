@@ -30,7 +30,9 @@ import os
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://chatai-5b52.onrender.com"
+]
 
 # Add this
 import os
