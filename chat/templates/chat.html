@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chatbot</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background: #111827;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .sidebar h3 {
+            margin: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 5px 0;
+            background: #1f2937;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: #374151;
+        }
+
+        /* MAIN */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            max-width: 60%;
+        }
+
+        .user {
+            background: #2563eb;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background: #e5e7eb;
+            color: black;
+            align-self: flex-start;
+        }
+
+        .top-bar {
+            padding: 10px;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-box {
+            display: flex;
+            padding: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h3>Chats</h3>
+
+    <div id="history-list">
+        {% for s in sessions %}
+        <div class="history-item">
+            <span onclick="loadChat({{ s.id }})">Chat {{ s.id }}</span>
+            <button onclick="deleteChat({{ s.id }})">❌</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <div class="top-bar">
+        <button onclick="newChat()">➕ New</button>
+        <button onclick="clearChat()">🗑 Clear</button>
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="input-box">
+        <input type="text" id="messageInput" placeholder="Type message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+<script>
+
+let currentSession = null;
+
+// Add message
+function addMessage(message, type) {
+    let chatBox = document.getElementById("chatBox");
+
+    let msg = document.createElement("div");
+    msg.classList.add("message", type);
+    msg.innerText = message;
+
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send message
+function sendMessage() {
+    let input = document.getElementById("messageInput");
+    let message = input.value;
+
+    if (!message) return;
+
+    addMessage(message, "user");
+    input.value = "";
+
+    fetch("/chat/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: `message=${message}&session_id=${currentSession || ""}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.response, "bot");
+        currentSession = data.session_id;
+    });
+}
+
+// Load chat
+function loadChat(id) {
+    currentSession = id;
+
+    fetch(`/load/${id}/`)
+    .then(res => res.json())
+    .then(data => {
+        let chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = "";
+
+        data.messages.forEach(msg => {
+            addMessage(msg.user, "user");
+            addMessage(msg.bot, "bot");
+        });
+    });
+}
+
+// Delete chat
+function deleteChat(id) {
+    fetch(`/delete/${id}/`)
+    .then(() => location.reload());
+}
+
+// Clear current chat
+function clearChat() {
+    if (!currentSession) return;
+
+    fetch(`/clear/${currentSession}/`)
+    .then(() => {
+        document.getElementById("chatBox").innerHTML = "";
+    });
+}
+
+// New chat
+function newChat() {
+    currentSession = null;
+    document.getElementById("chatBox").innerHTML = "";
+}
+
+// CSRF
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
+</script>
+
+</body>
+</html>
