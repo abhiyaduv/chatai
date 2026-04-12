@@ -1,7 +1,7 @@
 from groq import Groq
 from django.conf import settings
 
-client = Groq(api_key=settings.GROQ_API_KEY)
+print("GROQ KEY:", settings.GROQ_API_KEY)
 
 def get_groq_response(message):
     try:
